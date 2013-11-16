@@ -234,6 +234,7 @@ static enum protoCmd render(struct xmlmapconfig * map, int x, int y, int z, char
     int render_size_tx = MIN(METATILE, map->prj->aspect_x * (1 << z));
     int render_size_ty = MIN(METATILE, map->prj->aspect_y * (1 << z));
 
+    struct projectionconfig * prj = map->prj;
     // Split the meta tile into an NxN grid of tiles
     map->map.resize(map->tilesize, map->tilesize);
     unsigned int xx, yy;
