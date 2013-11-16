@@ -31,7 +31,7 @@
 #include "cache_expire.h"
 #include "parameterize_style.hpp"
 
-#include "mapnik/telenav_protobuf_renderer.h"
+#include <mapnik/telenav_protobuf_renderer.h>
 
 #ifdef HTCP_EXPIRE_CACHE
 #include <sys/socket.h>
