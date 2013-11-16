@@ -31,6 +31,8 @@
 #include "cache_expire.h"
 #include "parameterize_style.hpp"
 
+#include "mapnik/telenav_protobuf_renderer.h"
+
 #ifdef HTCP_EXPIRE_CACHE
 #include <sys/socket.h>
 #include <netdb.h>
@@ -183,9 +185,9 @@ static void parameterize_map_max_connections(Map &m, int num_threads) {
             params["max_size"] = tmp;
         }
 #if MAPNIK_VERSION >= 200200
-        boost::shared_ptr<datasource> ds = datasource_cache::instance().create(params);
+        std::shared_ptr<datasource> ds = datasource_cache::instance().create(params);
 #else
-        boost::shared_ptr<datasource> ds = datasource_cache::instance()->create(params);
+        std::shared_ptr<datasource> ds = datasource_cache::instance()->create(params);
 #endif
         l.set_datasource(ds);
     }
@@ -232,32 +234,30 @@ static enum protoCmd render(struct xmlmapconfig * map, int x, int y, int z, char
     int render_size_tx = MIN(METATILE, map->prj->aspect_x * (1 << z));
     int render_size_ty = MIN(METATILE, map->prj->aspect_y * (1 << z));
 
-    map->map.resize(render_size_tx*map->tilesize, render_size_ty*map->tilesize);
-    map->map.zoom_to_box(tile2prjbounds(map->prj, x, y, z));
-    if (map->map.buffer_size() == 0) { // Only set buffer size if the buffer size isn't explicitly set in the mapnik stylesheet.
-        map->map.set_buffer_size(128);
-    }
-    //m.zoom(size+1);
-
-    mapnik::image_32 buf(render_size_tx*map->tilesize, render_size_ty*map->tilesize);
-    try {
-        Map map_parameterized = map->map; 
-        if (map->parameterize_function) 
-            map->parameterize_function(map_parameterized, options); 
-        mapnik::agg_renderer<mapnik::image_32> ren(map_parameterized,buf); 
-        ren.apply();
-    } catch (std::exception const& ex) {
-      syslog(LOG_ERR, "ERROR: failed to render TILE %s %d %d-%d %d-%d", map->xmlname, z, x, x+render_size_tx-1, y, y+render_size_ty-1);
-      syslog(LOG_ERR, "   reason: %s", ex.what());
-      return cmdNotDone;
-    }
-
     // Split the meta tile into an NxN grid of tiles
+    map->map.resize(map->tilesize, map->tilesize);
     unsigned int xx, yy;
     for (yy = 0; yy < render_size_ty; yy++) {
         for (xx = 0; xx < render_size_tx; xx++) {
-            mapnik::image_view<mapnik::image_data_32> vw(xx * map->tilesize, yy * map->tilesize, map->tilesize, map->tilesize, buf.data());
-            tiles.set(xx, yy, save_to_string(vw, "png256"));
+        	double p0x = prj->bound_x0 + (prj->bound_x1 - prj->bound_x0)* ((double)x / (double)(prj->aspect_x * 1<<z));
+        	double p0y = (prj->bound_y1 - (prj->bound_y1 - prj->bound_y0)* (((double)y + yy) / (double)(prj->aspect_y * 1<<z)));
+        	double p1x = prj->bound_x0 + (prj->bound_x1 - prj->bound_x0)* (((double)x + xx) / (double)(prj->aspect_x * 1<<z));
+        	double p1y = (prj->bound_y1 - (prj->bound_y1 - prj->bound_y0)* ((double)y / (double)(prj->aspect_y * 1<<z)));
+        	syslog(LOG_DEBUG, "Rendering projected coordinates %i %i %i -> %f|%f %f|%f\n", z, x+xx, y+yy, p0x, p0y, p1x, p1y);
+        	mapnik::box2d<double> bbox(p0x, p0y, p1x,p1y);
+        	map->map.zoom_to_box(bbox);
+        	try {
+				VectorMapTile tile;
+				tn_renderer<VectorMapTile> ren(map->map, tile);
+				ren.apply();
+				std::string value;
+				tile.SerializeToString(&value);
+				tiles.set(xx, yy, value);
+        	} catch (std::exception const& ex) {
+        	    syslog(LOG_ERR, "ERROR: failed to render TILE %s %d %d %d", map->xmlname, z, x+xx, y+yy);
+        	    syslog(LOG_ERR, "   reason: %s", ex.what());
+        	    return cmdNotDone;
+        	}
         }
     }
     return cmdDone; // OK

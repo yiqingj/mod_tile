@@ -45,9 +45,9 @@ static void parameterize_map_language(mapnik::Map &m, char * parameter) {
                 str.replace(pos,5,name_replace); 
                 params["table"] = str; 
 #if MAPNIK_VERSION >= 200200
-                boost::shared_ptr<mapnik::datasource> ds = mapnik::datasource_cache::instance().create(params); 
+                std::shared_ptr<mapnik::datasource> ds = mapnik::datasource_cache::instance().create(params); 
 #else
-                boost::shared_ptr<mapnik::datasource> ds = mapnik::datasource_cache::instance()->create(params);
+                std::shared_ptr<mapnik::datasource> ds = mapnik::datasource_cache::instance()->create(params);
 #endif
                 l.set_datasource(ds); 
             } 
