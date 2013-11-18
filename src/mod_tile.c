@@ -1734,7 +1734,7 @@ static const char *add_tile_mime_config(cmd_parms *cmd, void *mconfig, const cha
         return _add_tile_config(cmd, mconfig, baseuri, name, 0, MAX_ZOOM, 1, 1, fileExtension, "text/javascript",NULL,NULL,0,NULL,"*", NULL,0);
     }
     if (strcmp(fileExtension,"pb") == 0) {
-            return _add_tile_config(cmd, mconfig, baseuri, name, 0, MAX_ZOOM, 1, 1, fileExtension, "application/x-protobuf",NULL,NULL,0,NULL,"*", NULL,0);
+            return _add_tile_config(cmd, mconfig, baseuri, name, 0, MAX_ZOOM, 1, 1, fileExtension, "application/x-protobuf",NULL,NULL,0,NULL,NULL, NULL,0);
         }
     return _add_tile_config(cmd, mconfig, baseuri, name, 0, MAX_ZOOM, 1, 1, fileExtension, "image/png",NULL,NULL,0,NULL,NULL, NULL,0);
 }
