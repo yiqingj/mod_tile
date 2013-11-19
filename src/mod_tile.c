@@ -1269,7 +1269,7 @@ static int tile_translate(request_rec *r)
 {
     int i,n,limit,oob;
     char option[11];
-    char extension[256];
+    char extension[256] = "pb";
 
     ap_conf_vector_t *sconf = r->server->module_config;
     tile_server_conf *scfg = ap_get_module_config(sconf, &tile_module);
@@ -1314,6 +1314,7 @@ static int tile_translate(request_rec *r)
             char parameters[XMLCONFIG_MAX];
             if (tile_config->enableOptions) {
                 cmd->ver = PROTO_VER;
+                /*%40 = @, %25 = %, %10 = */
                 n = sscanf(r->uri+strlen(tile_config->baseuri),"%40[^/]/%d/%d/%d.%255[a-z]/%10s", parameters,&(cmd->z), &(cmd->x), &(cmd->y), extension, option); 
                 if (n < 5) { 
                     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "tile_translate: Invalid URL for tilelayer %s with options", tile_config->xmlname); 
@@ -1321,8 +1322,11 @@ static int tile_translate(request_rec *r)
                 } 
             } else { 
                 cmd->ver = 2;
-                n = sscanf(r->uri+strlen(tile_config->baseuri),"%d/%d/%d.%255[a-z]/%10s", &(cmd->z), &(cmd->x), &(cmd->y), extension, option); 
-                if (n < 4) { 
+
+                n = sscanf(r->uri+strlen(tile_config->baseuri),"%d/%d/%d/%10s", &(cmd->z), &(cmd->y), &(cmd->x), option);
+                syslog(LOG_DEBUG, "Request. %s, extension: %s",r->uri+strlen(tile_config->baseuri), extension);
+                /*n = sscanf(r->uri+strlen(tile_config->baseuri),"%d/%d/%d.%255[a-z]/%10s", &(cmd->z), &(cmd->x), &(cmd->y), extension, option); */
+                if (n < 3) {
                     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "tile_translate: Invalid URL for tilelayer %s without options", tile_config->xmlname); 
                     return DECLINED; 
                 }
@@ -1735,7 +1739,7 @@ static const char *add_tile_mime_config(cmd_parms *cmd, void *mconfig, const cha
     }
     if (strcmp(fileExtension,"pb") == 0) {
             return _add_tile_config(cmd, mconfig, baseuri, name, 0, MAX_ZOOM, 1, 1, fileExtension, "application/x-protobuf",NULL,NULL,0,NULL,NULL, NULL,0);
-        }
+    }
     return _add_tile_config(cmd, mconfig, baseuri, name, 0, MAX_ZOOM, 1, 1, fileExtension, "image/png",NULL,NULL,0,NULL,NULL, NULL,0);
 }
 

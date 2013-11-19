@@ -240,11 +240,12 @@ static enum protoCmd render(struct xmlmapconfig * map, int x, int y, int z, char
     unsigned int xx, yy;
     for (yy = 0; yy < render_size_ty; yy++) {
         for (xx = 0; xx < render_size_tx; xx++) {
-        	double p0x = prj->bound_x0 + (prj->bound_x1 - prj->bound_x0)* ((double)x / (double)(prj->aspect_x * 1<<z));
-        	double p0y = (prj->bound_y1 - (prj->bound_y1 - prj->bound_y0)* (((double)y + yy) / (double)(prj->aspect_y * 1<<z)));
-        	double p1x = prj->bound_x0 + (prj->bound_x1 - prj->bound_x0)* (((double)x + xx) / (double)(prj->aspect_x * 1<<z));
-        	double p1y = (prj->bound_y1 - (prj->bound_y1 - prj->bound_y0)* ((double)y / (double)(prj->aspect_y * 1<<z)));
-        	syslog(LOG_DEBUG, "Rendering projected coordinates %i %i %i -> %f|%f %f|%f\n", z, x+xx, y+yy, p0x, p0y, p1x, p1y);
+        	double p0x = prj->bound_x0 + (prj->bound_x1 - prj->bound_x0)* ((double)(x+ xx) / (double)(prj->aspect_x * 1<<z));
+        	double p0y = (prj->bound_y1 - (prj->bound_y1 - prj->bound_y0)* (((double)(y + yy+1)) / (double)(prj->aspect_y * 1<<z)));
+        	double p1x = prj->bound_x0 + (prj->bound_x1 - prj->bound_x0)* (((double)(x + xx+1)) / (double)(prj->aspect_x * 1<<z));
+        	double p1y = (prj->bound_y1 - (prj->bound_y1 - prj->bound_y0)* ((double)(y+yy) / (double)(prj->aspect_y * 1<<z)));
+        	//syslog(LOG_DEBUG, "Proj: bound_x0=%f, bound_y0=%f,bound_x1=%f,bound_y1=%f, aspect_x=%d,aspect_y=%d", prj->bound_x0,prj->bound_y0, prj->bound_x1, prj->bound_y1, prj->aspect_x, prj->aspect_y);
+        	//syslog(LOG_DEBUG, "Rendering projected coordinates %i %i %i -> %f|%f %f|%f\n", z, x+xx, y+yy, p0x, p0y, p1x, p1y);
         	mapnik::box2d<double> bbox(p0x, p0y, p1x,p1y);
         	map->map.zoom_to_box(bbox);
         	try {
